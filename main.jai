@@ -1,25 +1,9 @@
 default_font_height : int;
 
-window : Window_Type;
-window_height : s32 = 1000;
-window_width  : s32 = 1000;
+total_time : Apollo_Time;
 quit := false;
 
 debug_flag := true;
-
-Color :: struct {
-  r, g, b : float;
-  a : float = 1;
-  #place r;
-  using #as vec: Math.Vector4;
-}
-
-Colors :: struct {
-  // Normal colors
-  WHITE :: Color.{1, 1, 1, 1};
-  BLACK :: Color.{0, 0, 0, 1};
-  CLEAR :: Color.{0.2, 0.2, 0.2, 1};
-}
 
 os_setup_nonsense :: () {
   #if OS == .WINDOWS {
@@ -27,12 +11,6 @@ os_setup_nonsense :: () {
     Windows.SetProcessDPIAware();
     Windows.timeBeginPeriod(1);
   }
-}
-
-get_font :: (name: string, height: int) -> *Simp.Dynamic_Font {
-  filename := tprint("%.ttf", name);
-  font := Simp.get_font_at_size("./fonts", filename, height);
-  return font;
 }
 
 update_window_dimensions :: () {
@@ -61,20 +39,6 @@ handle_input_this_frame :: () {
   }
 }
 
-draw_text :: (font: *Simp.Dynamic_Font, text: string, x: float, y: float, color:=Colors.WHITE) {
-  text_width := Simp.prepare_text(font, text);
-  x_pt := cast(int)(window_width * x);
-  y_pt := cast(int)(window_height * y);
-  Simp.draw_prepared_text(font, x_pt, y_pt, color);
-}
-
-draw_frame :: () {
-  font_height := window_height / 10; // in px
-  font := get_font("OpenSans-BoldItalic", font_height);
-  draw_text(font, "Hello, World!", 0.1, 0.1, color=Colors.BLACK);
-  Simp.swap_buffers(window);
-}
-
 main :: () {
   os_setup_nonsense();
 
@@ -84,19 +48,24 @@ main :: () {
   Simp.set_render_target(window);
 
   while !quit {
-    c := Colors.CLEAR;
-    update_window_dimensions();
-    Simp.clear_render_target(c.r, c.g, c.b, c.a);
-
+    total_time = current_time_monotonic();
+    time_ms, _ := to_milliseconds(total_time);
+    // Take the sine of this
     handle_input_this_frame();
-    draw_frame();
+
+    update_window_dimensions();
+    c := Colors.CLEAR;
+    Simp.clear_render_target(c.r, c.g, c.b, c.a);
+    draw_frame(time_ms);
 
 
     reset_temporary_storage();
   }
 }
 
+
 #scope_file
+
 
 #import "Basic";
 #import "String";
@@ -105,3 +74,5 @@ main :: () {
 Simp  :: #import "Simp"; // rendering
 Input :: #import "Input"; // mouse/keyboard/window resizing
 Math :: #import "Math"; // mouse/keyboard/window resizing
+
+#import,file "graphics.jai";
